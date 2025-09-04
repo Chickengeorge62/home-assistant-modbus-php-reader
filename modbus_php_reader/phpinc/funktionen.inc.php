@@ -85,66 +85,39 @@ class Funktionen {
     }
 
     function fillModbusCache($serialPort, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $ModbusCacheSize, $DatenTyp, &$ModbusCache, $Timebase) {
-        $serial = @dio_open($serialPort, O_RDWR);
-        if (!$serial) {
-            $this->log_schreiben("Konnte seriellen Port " . $serialPort . " nicht öffnen", "!  ", 5);
-            return false;
-        }
+        require_once '/vendor/autoload.php';
+        use PhpModbus\ModbusMaster;
 
-        dio_tcsetattr($serial, array(
-            'baud' => 9600,
-            'bits' => 8,
-            'stop' => 1,
-            'parity' => 0
-        ));
+        try {
+            // Erstelle eine ModbusMaster-Instanz für RTU
+            $modbus = new ModbusMaster('localhost', 'RTU', $serialPort, 9600, 8, 1, 0);
+            $modbus->setTimeout(1); // Timeout auf 1 Sekunde setzen
 
-        $frame = pack('C', hexdec($GeraeteAdresse));
-        $frame .= pack('C', hexdec($FunktionsCode));
-        $frame .= pack('n', $RegisterAdresse);
-        $frame .= pack('n', $ModbusCacheSize);
-        $crc = $this->calculateCRC($frame);
-        $frame .= $crc;
-
-        dio_write($serial, $frame);
-
-        $response = '';
-        $timeout = 1;
-        $startTime = microtime(true);
-        while ((microtime(true) - $startTime) < $timeout) {
-            $data = dio_read($serial, 1024);
-            if ($data !== false) {
-                $response .= $data;
+            // Lese Register basierend auf Funktionscode
+            if ($FunktionsCode == '04') {
+                $recData = $modbus->readInputRegisters(hexdec($GeraeteAdresse), $RegisterAdresse, $ModbusCacheSize);
+            } elseif ($FunktionsCode == '03') {
+                $recData = $modbus->readHoldingRegisters(hexdec($GeraeteAdresse), $RegisterAdresse, $ModbusCacheSize);
+            } else {
+                $this->log_schreiben("Nicht unterstützter Funktionscode: " . $FunktionsCode, "!  ", 5);
+                return false;
             }
-            if (strlen($response) >= (3 + $ModbusCacheSize * 2 + 2)) {
-                break;
+
+            // Speichere Daten im Cache
+            for ($i = 0; $i < count($recData) / 2; $i++) {
+                $ModbusCache[$RegisterAdresse + $i] = sprintf("%04X", ($recData[$i * 2] << 8) | $recData[$i * 2 + 1]);
             }
-        }
 
-        dio_close($serial);
-
-        if (strlen($response) < 5) {
-            $this->log_schreiben("Keine oder ungültige Antwort von Gerät " . $GeraeteAdresse, "!  ", 5);
+            $ModbusCache["gelesen"] = new DateTime();
+            return true;
+        } catch (Exception $e) {
+            $this->log_schreiben("Modbus-Fehler: " . $e->getMessage(), "!  ", 5);
             return false;
         }
-
-        $responseCRC = substr($response, -2);
-        $calculatedCRC = $this->calculateCRC(substr($response, 0, -2));
-        if ($responseCRC !== $calculatedCRC) {
-            $this->log_schreiben("CRC-Fehler bei Modbus-Antwort", "!  ", 5);
-            return false;
-        }
-
-        $byteCount = ord($response[2]);
-        $data = substr($response, 3, $byteCount);
-        for ($i = 0; $i < $byteCount / 2; $i++) {
-            $ModbusCache[$RegisterAdresse + $i] = bin2hex(substr($data, $i * 2, 2));
-        }
-
-        $ModbusCache["gelesen"] = new DateTime();
-        return true;
     }
 
     function calculateCRC($data) {
+        // Nicht mehr benötigt mit phpmodbus, aber für Kompatibilität beibehalten
         $crc = 0xFFFF;
         for ($i = 0; $i < strlen($data); $i++) {
             $crc ^= ord($data[$i]);
