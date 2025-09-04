@@ -1,21 +1,24 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 require_once '/phpinc/funktionen.inc.php';
 require_once '/vendor/autoload.php';
-use \PhpMqtt\Client\MqttClient;
+use PhpMqtt\Client\MqttClient; // Konsistenter Namespace
 
 $SerialPort = '/dev/ttyUSB0';
 $WR_Adresse = 1;
 $WR_Funktionscode = "04";
 $WR_Registers = array(
-    // ... dein Array bleibt unverändert ...
+    "Power" => array("3000", "U32", 1),
+    "Voltage" => array("3002", "U16", 0.1),
 );
 
 $funktionen = new Funktionen();
+$aktuelleDaten = [];
 
-function readWR($WRName, $SerialPort, $WR_Adresse, $FunktionsCode, $WR_Registers) {
-    global $funktionen;
-    global $aktuelleDaten;
-
+function readWR($WRName, $SerialPort, $WR_Adresse, $FunktionsCode, $WR_Registers, $funktionen, &$aktuelleDaten) {
     if (!file_exists($SerialPort)) {
         $funktionen->log_schreiben("Serieller Port " . $SerialPort . " nicht gefunden", "XX ", 3);
         throw new Exception("Konnte seriellen Port nicht öffnen.");
@@ -50,5 +53,5 @@ function readWR($WRName, $SerialPort, $WR_Adresse, $FunktionsCode, $WR_Registers
     }
 }
 
-readWR("Growatt_", $SerialPort, $WR_Adresse, $WR_Funktionscode, $WR_Registers);
+readWR("Growatt_", $SerialPort, $WR_Adresse, $WR_Funktionscode, $WR_Registers, $funktionen, $aktuelleDaten);
 ?>
