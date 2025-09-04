@@ -1,0 +1,4 @@
+name: Modbus PHP Reader Repository
+description: Home Assistant Add-on zum Auslesen von Modbus-Daten über USB-zu-RS485
+url: https://github.com/Chickengeorge62/home-assistant-modbus-php-reader
+maintainer: Chickengeorge62 <your-email@example.com>
