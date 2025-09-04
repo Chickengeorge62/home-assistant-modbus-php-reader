@@ -1,4 +1,4 @@
-FROM FROM arm64v8/php:7.4-cli
+FROM arm64v8/php:7.4-cli
 
 
 # Installiere php-dio, composer und php-mqtt/client
