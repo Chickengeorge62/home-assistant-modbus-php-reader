@@ -1,0 +1,18 @@
+name: Modbus PHP Reader
+version: 1.0.0
+slug: modbus_php_reader
+description: PHP-Skript zum Auslesen von Modbus-Daten über USB-zu-RS485
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+startup: application
+boot: auto
+devices:
+  - /dev/ttyUSB0:/dev/ttyUSB0
+map:
+  - share:rw
+options: {}
+schema: {}
