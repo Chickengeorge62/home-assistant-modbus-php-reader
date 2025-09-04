@@ -1,0 +1,1 @@
+# home-assistant-modbus-php-reader
