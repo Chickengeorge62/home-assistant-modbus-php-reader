@@ -1,4 +1,5 @@
-FROM php:7.4-cli
+FROM FROM arm64v8/php:7.4-cli
+
 
 # Installiere php-dio, composer und php-mqtt/client
 RUN apt-get update && apt-get install -y php-dio libmosquitto-dev git \
